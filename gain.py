@@ -177,6 +177,6 @@ def gain (data_x, gain_parameters, m = 10):
     tmp_imputed_data = renormalization(tmp_imputed_data, norm_parameters)  
   
     # Rounding
-    imputed_data[m_it] = rounding(tmp_imputed_data, data_x)  
+    imputed_data.append(rounding(tmp_imputed_data, data_x))  
           
   return imputed_data
