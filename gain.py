@@ -20,7 +20,7 @@ from utils import xavier_init
 from utils import binary_sampler, uniform_sampler, sample_batch_index
 
 
-def gain (data_x, gain_parameters):
+def gain (data_x, gain_parameters, m = 10):
   '''Impute missing values in data_x
   
   Args:
@@ -160,20 +160,23 @@ def gain (data_x, gain_parameters):
     sess.run([G_solver, G_loss_temp, MSE_loss],
              feed_dict = {X: X_mb, M: M_mb, H: H_mb})
             
-  ## Return imputed data      
-  Z_mb = uniform_sampler(0, 0.01, no, dim) 
-  M_mb = data_m
-  X_mb = norm_data_x          
-  X_mb = M_mb * X_mb + (1-M_mb) * Z_mb 
+  ## Return imputed data
+  # MN: Multiple Draws from last Generator for MI
+  imputed_data = []
+  for m_it in range(0, m):
+    Z_mb = uniform_sampler(0, 0.01, no, dim) 
+    M_mb = data_m
+    X_mb = norm_data_x          
+    X_mb = M_mb * X_mb + (1-M_mb) * Z_mb 
       
-  imputed_data = sess.run([G_sample], feed_dict = {X: X_mb, M: M_mb})[0]
+    tmp_imputed_data = sess.run([G_sample], feed_dict = {X: X_mb, M: M_mb})[0]
   
-  imputed_data = data_m * norm_data_x + (1-data_m) * imputed_data
+    tmp_imputed_data = data_m * norm_data_x + (1-data_m) * tmp_imputed_data
   
-  # Renormalization
-  imputed_data = renormalization(imputed_data, norm_parameters)  
+    # Renormalization
+    tmp_imputed_data = renormalization(tmp_imputed_data, norm_parameters)  
   
-  # Rounding
-  imputed_data = rounding(imputed_data, data_x)  
+    # Rounding
+    imputed_data[m_it] = rounding(tmp_imputed_data, data_x)  
           
   return imputed_data
